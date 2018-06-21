@@ -1,0 +1,2 @@
+defmodule Channel do
+end
