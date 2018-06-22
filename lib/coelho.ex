@@ -1,9 +1,10 @@
 defmodule Coelho do
   alias Coelho.Connection
+  alias Coelho.Basic
 
   require Logger
 
-  def enqueue(exchange, routing_key, message, opts) do
+  def enqueue(exchange, routing_key, message, opts \\ []) do
     opts = Keyword.merge(opts, persistent: true, mandatory: true)
 
     with_channel(fn chan ->
