@@ -1,0 +1,13 @@
+defmodule Coelho.Basic do
+  def ack(channel, delivery_tag, options \\ []) do
+    AMQP.Basic.ack(channel, delivery_tag, options)
+  end
+
+  def consume(chan, queue, consumer_pid \\ nil, options \\ []) do
+    AMQP.Basic.consume(chan, queue, consumer_pid, options)
+  end
+
+  def publish(channel, exchange, routing_key, payload, options \\ []) do
+    AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
+  end
+end
