@@ -48,7 +48,7 @@ defmodule Coelho.Connection do
   def handle_call(:open_channel, _from, %{conn: conn} = state) do
     Logger.info("Openning channel")
 
-    result = AMPQ.Channel.open(conn)
+    result = AMQP.Channel.open(conn)
 
     {:reply, result, state}
   end
