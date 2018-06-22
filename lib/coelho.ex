@@ -3,15 +3,11 @@ defmodule Coelho do
 
   require Logger
 
-  def basic_qos(chan, opts \\ []) do
-    Basic.qos(chan, opts)
-  end
-
   def enqueue(exchange, routing_key, message, opts) do
     opts = Keyword.merge(opts, persistent: true, mandatory: true)
 
     with_channel(fn chan ->
-      AMQP.Basic.publish(
+      Basic.publish(
         chan,
         exchange,
         routing_key,
@@ -22,13 +18,12 @@ defmodule Coelho do
   end
 
   def with_channel(fun) do
-    conn = Connection.get()
-
-    with {:ok, chan} <- AMQP.Channel.open(conn) do
+    with {:ok, chan} <- Connection.open_channel() do
       try do
         AMQP.Confirm.select(chan)
-        fun.(chan)
+        result = fun.(chan)
         AMQP.Confirm.wait_for_confirms_or_die(chan, 10_000)
+        result
       rescue
         e ->
           Logger.error("Error sending message to rabbitmq... #{inspect(e)} ")
@@ -42,9 +37,5 @@ defmodule Coelho do
         AMQP.Channel.close(chan)
       end
     end
-  end
-
-  def open_channel do
-    Connection.open_channel()
   end
 end

@@ -10,4 +10,8 @@ defmodule Coelho.Basic do
   def publish(channel, exchange, routing_key, payload, options \\ []) do
     AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
   end
+
+  def qos(chan, opts \\ []) do
+    AMQP.Basic.qos(chan, opts)
+  end
 end
