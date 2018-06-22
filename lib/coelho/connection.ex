@@ -6,7 +6,7 @@ defmodule Coelho.Connection do
   @reconnect_interval_ms 5000
 
   def init(_opts) do
-    {:ok, %{}}
+    {:ok, %{}, 0}
   end
 
   def start_link() do
@@ -29,12 +29,6 @@ defmodule Coelho.Connection do
     end
   end
 
-  def handle_info({:DOWN, _, :process, pid, reason}, _) do
-    Logger.error("Disconnected from broker: #{reason}")
-
-    {:noreply, %{}}
-  end
-
   def handle_call(:get_connection, _from, %{conn: conn} = state), do: {:reply, conn, state}
 
   def handle_call(:get_connection, _from, state) do
@@ -51,6 +45,27 @@ defmodule Coelho.Connection do
     result = AMQP.Channel.open(conn)
 
     {:reply, result, state}
+  end
+
+  def handle_info({:DOWN, _, :process, pid, reason}, _) do
+    Logger.error("Disconnected from broker: #{reason}")
+
+    {:noreply, %{}}
+  end
+
+  def handle_info(:timeout, state) do
+    if is_pid(state[:conn]) do
+      {:noreply, state}
+    else
+      case connect() do
+        {:ok, conn} ->
+          state = Map.put(state, :conn, conn)
+          {:noreply, state}
+        _error ->
+          :erlang.send_after(@reconnect_interval_ms, self(), :timeout)
+          {:noreply, state}
+      end
+    end
   end
 
   def get do
