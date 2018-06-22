@@ -6,7 +6,7 @@ defmodule Coelho.Connection do
   @reconnect_interval_ms 5000
 
   def init(_opts) do
-    connect()
+   {:ok, %{}}
   end
 
   def start_link() do
@@ -18,9 +18,9 @@ defmodule Coelho.Connection do
 
     case AMQP.Connection.open(config) do
       {:ok, conn} ->
-        Logger.info("Connected to rabbitmq")
+        Logger.info("Connected to rabbitmq: #{inspect conn}")
         Process.monitor(conn.pid)
-        {:ok, %{conn: conn}}
+        {:ok, conn}
 
       {:error, _} ->
         Logger.error("Cannot connect to rabbitmq. Waiting #{@reconnect_interval_ms} ms.")
@@ -29,17 +29,25 @@ defmodule Coelho.Connection do
     end
   end
 
-  def handle_info({:DOWN, _, :process, _pid, reason}, _) do
+  def handle_info({:DOWN, _, :process, pid, reason}, _) do
     Logger.error("Disconnected from broker: #{reason}")
-    {:ok, conn} = connect()
-    {:noreply, %{conn: conn}}
+
+    {:noreply, %{}}
   end
 
-  def handle_call(:get_connection, _from, state = %{conn: conn}) do
-    {:reply, conn, state}
+
+  def handle_call(:get_connection, _from, %{ conn: conn } = state), do: {:reply, conn, state}
+
+  def handle_call(:get_connection, _from, state) do
+    Logger.info("Getting connection")
+
+    {:ok, conn} = connect()
+
+    {:reply, conn, %{conn: conn} }
   end
 
   def get do
     GenServer.call(__MODULE__, :get_connection)
   end
+
 end
