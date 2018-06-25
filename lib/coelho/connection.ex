@@ -23,7 +23,6 @@ defmodule Coelho.Connection do
         {:ok, conn}
 
       {:error, _} ->
-        Logger.error("Cannot connect to rabbitmq. Waiting #{@reconnect_interval_ms} ms.")
         :timer.sleep(@reconnect_interval_ms)
         connect()
     end
@@ -47,8 +46,8 @@ defmodule Coelho.Connection do
     {:reply, result, state}
   end
 
-  def handle_info({:DOWN, _, :process, pid, reason}, _) do
-    Logger.error("Disconnected from broker: #{reason}")
+  def handle_info({:DOWN, _, :process, _pid, reason}, _) do
+    Logger.error("Disconnected from broker: #{inspect(reason)}")
 
     {:noreply, %{}}
   end
