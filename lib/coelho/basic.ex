@@ -14,4 +14,8 @@ defmodule Coelho.Basic do
   def qos(chan, opts \\ []) do
     AMQP.Basic.qos(chan, opts)
   end
+
+  def reject(channel, delivery_tag, options \\ []) do
+    AMQP.Basic.reject(channel, delivery_tag, options)
+  end
 end
