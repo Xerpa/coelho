@@ -46,6 +46,20 @@ defmodule Coelho.Connection do
     {:reply, result, state}
   end
 
+  def handle_call(:open_channel, _from, state) do
+    Logger.info("Getting connection")
+
+    {:ok, conn} = connect()
+
+    Logger.info("Openning channel")
+
+    result = AMQP.Channel.open(conn)
+
+    state = Map.put(state, :conn, conn)
+
+    {:reply, result, state}
+  end
+
   def handle_info({:DOWN, _, :process, _pid, reason}, _) do
     Logger.error("Disconnected from broker: #{inspect(reason)}")
 
