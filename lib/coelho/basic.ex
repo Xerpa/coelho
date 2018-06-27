@@ -3,6 +3,10 @@ defmodule Coelho.Basic do
     AMQP.Basic.ack(channel, delivery_tag, options)
   end
 
+  def nack(channel, delivery_tag, options \\ []) do
+    AMQP.Basic.nack(channel, delivery_tag, options)
+  end
+
   def consume(chan, queue, consumer_pid \\ nil, options \\ []) do
     AMQP.Basic.consume(chan, queue, consumer_pid, options)
   end
