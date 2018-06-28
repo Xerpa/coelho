@@ -34,7 +34,7 @@ defmodule Coelho do
           Logger.error("Error sending message to rabbitmq... #{inspect(cause)} ")
           :error
       after
-        Logger.info("Closing channel")
+        Logger.debug("Closing channel")
         AMQP.Channel.close(chan)
       end
     end

@@ -18,7 +18,7 @@ defmodule Coelho.Connection do
 
     case AMQP.Connection.open(config) do
       {:ok, conn} ->
-        Logger.info("Connected to rabbitmq: #{inspect(conn)}")
+        Logger.debug("Connected to rabbitmq: #{inspect(conn)}")
         Process.monitor(conn.pid)
         {:ok, conn}
 
@@ -31,7 +31,7 @@ defmodule Coelho.Connection do
   def handle_call(:get_connection, _from, %{conn: conn} = state), do: {:reply, conn, state}
 
   def handle_call(:get_connection, _from, state) do
-    Logger.info("Getting connection")
+    Logger.debug("Getting connection")
 
     {:ok, conn} = connect()
 
@@ -39,7 +39,7 @@ defmodule Coelho.Connection do
   end
 
   def handle_call(:open_channel, _from, %{conn: conn} = state) do
-    Logger.info("Openning channel")
+    Logger.debug("Openning channel")
 
     result = AMQP.Channel.open(conn)
 
@@ -47,11 +47,11 @@ defmodule Coelho.Connection do
   end
 
   def handle_call(:open_channel, _from, state) do
-    Logger.info("Getting connection")
+    Logger.debug("Getting connection")
 
     {:ok, conn} = connect()
 
-    Logger.info("Openning channel")
+    Logger.debug("Openning channel")
 
     result = AMQP.Channel.open(conn)
 
