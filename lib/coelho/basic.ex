@@ -11,6 +11,10 @@ defmodule Coelho.Basic do
     AMQP.Basic.consume(chan, queue, consumer_pid, options)
   end
 
+  def get(chan, queue, options \\ []) do
+    AMQP.Basic.get(chan, queue, options)
+  end
+
   def publish(channel, exchange, routing_key, payload, options \\ []) do
     AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
   end
