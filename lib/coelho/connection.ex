@@ -57,7 +57,8 @@ defmodule Coelho.Connection do
     handle_call(:open_channel, from, state)
   end
 
-  def handle_call({:open_managed_channel, on_open_fn}, from, %{conn: conn} = state) when is_function(on_open_fn, 1) do
+  def handle_call({:open_managed_channel, on_open_fn}, from, %{conn: conn} = state)
+      when is_function(on_open_fn, 1) do
     case Map.fetch(state.channels, from) do
       {:ok, chan} ->
         {:reply, {:ok, chan}, state}
@@ -69,12 +70,13 @@ defmodule Coelho.Connection do
     end
   end
 
-  def handle_call({:open_managed_channel, on_open_fn}, from, state) when is_function(on_open_fn, 1) do
+  def handle_call({:open_managed_channel, on_open_fn}, from, state)
+      when is_function(on_open_fn, 1) do
     Logger.debug("Getting connection")
 
     state = connect(state)
 
-    handle_call({:open_managed_channel, on_open_fn}, from state)
+    handle_call({:open_managed_channel, on_open_fn}, from(state))
   end
 
   def handle_call(:get_managed_channel, from, state) do
@@ -104,7 +106,8 @@ defmodule Coelho.Connection do
   end
 
   defp handle_consumer_down(state, consumer_ref) do
-    %{consumer_pid: consumer_pid, channel_reference: channel_ref} = Map.fetch!(state.consumer_references, consumer_ref)
+    %{consumer_pid: consumer_pid, channel_reference: channel_ref} =
+      Map.fetch!(state.consumer_references, consumer_ref)
 
     with {:ok, chan} <- Map.fetch(state.managed_channels, consumer_pid) do
       AMQP.Channel.close(chan)
@@ -112,19 +115,20 @@ defmodule Coelho.Connection do
 
     state =
       state
-      |> Map.update!(:consumer_references, & Map.delete(&1, consumer_ref))
-      |> Map.update!(:managed_channels, & Map.delete(&1, consumer_pid))
-      |> Map.update!(:channel_references, & Map.delete(&1, channel_ref))
+      |> Map.update!(:consumer_references, &Map.delete(&1, consumer_ref))
+      |> Map.update!(:managed_channels, &Map.delete(&1, consumer_pid))
+      |> Map.update!(:channel_references, &Map.delete(&1, channel_ref))
 
     {:noreply, state}
   end
 
   defp handle_channel_down(state, channel_ref) do
-    %{on_open_fn: on_open_fn, consumer_pid: consumer_pid} = Map.fetch!(state.channel_references, channel_ref)
+    %{on_open_fn: on_open_fn, consumer_pid: consumer_pid} =
+      Map.fetch!(state.channel_references, channel_ref)
 
     {state, chan} = open_managed_channel_impl(state, consumer_pid, on_open_fn)
 
-    state = Map.update!(state, :managed_channels, & Map.put(&1, :consumer_pid, chan))
+    state = Map.update!(state, :managed_channels, &Map.put(&1, :consumer_pid, chan))
 
     {:noreply, state}
   end
@@ -137,6 +141,7 @@ defmodule Coelho.Connection do
         {:ok, conn} ->
           state = Map.put(state, :conn, conn)
           {:noreply, state}
+
         _error ->
           :erlang.send_after(@reconnect_interval_ms, self(), :connect)
           {:noreply, state}
@@ -200,9 +205,15 @@ defmodule Coelho.Connection do
 
     state =
       state
-      |> Map.update!(:consumer_references, & Map.put(&1, consumer_ref, %{consumer_pid: from, channel_reference: chan_ref}))
-      |> Map.update!(:managed_channels, & Map.put(&1, from, chan))
-      |> Map.update!(:channel_references, & Map.put(&1, chan_ref, %{on_open_fn: on_open_fn, consumer_pid: from}))
+      |> Map.update!(
+        :consumer_references,
+        &Map.put(&1, consumer_ref, %{consumer_pid: from, channel_reference: chan_ref})
+      )
+      |> Map.update!(:managed_channels, &Map.put(&1, from, chan))
+      |> Map.update!(
+        :channel_references,
+        &Map.put(&1, chan_ref, %{on_open_fn: on_open_fn, consumer_pid: from})
+      )
 
     on_open_fn.(chan)
 
