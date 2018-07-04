@@ -10,4 +10,8 @@ defmodule Coelho.Queue do
   def delete(channel, queue, options \\ []) do
     AMQP.Queue.delete(channel, queue, options)
   end
+
+  def unbind(channel, queue, exchange, options \\ []) do
+    AMQP.Queue.unbind(channel, queue, exchange, options)
+  end
 end
