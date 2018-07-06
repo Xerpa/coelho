@@ -1,5 +1,4 @@
 defmodule Coelho.Channel do
-
   alias Coelho.Connection
 
   require Logger
@@ -8,12 +7,7 @@ defmodule Coelho.Channel do
     AMQP.Channel.close(channel)
   end
 
-  def open() do
-    Logger.debug("Openning channel..")
-    case Connection.get() do
-      {:ok, conn} -> AMQP.Channel.open(conn)
-      {:error, _ } -> {:error, :no_connection}
-    end
+  def open(conn) do
+    AMQP.Channel.open(conn)
   end
-
 end
