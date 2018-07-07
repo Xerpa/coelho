@@ -6,7 +6,9 @@ defmodule Coelho.Connection do
   @reconnect_interval_ms 5000
 
   def init(_opts) do
-    {:ok, %{}, 0}
+    send self(), :connect
+
+    {:ok, %{}}
   end
 
   def start_link() do
@@ -48,16 +50,8 @@ defmodule Coelho.Connection do
 
   def handle_call(:open_channel, _from, state) do
     Logger.debug("Getting connection")
-
-    {:ok, conn} = connect()
-
-    Logger.debug("Openning channel")
-
-    result = AMQP.Channel.open(conn)
-
-    state = Map.put(state, :conn, conn)
-
-    {:reply, result, state}
+    send self(), :connect
+    {:reply, :no_connection, state}
   end
 
   def handle_info({:DOWN, _, :process, _pid, reason}, _) do
@@ -66,7 +60,7 @@ defmodule Coelho.Connection do
     {:noreply, %{}}
   end
 
-  def handle_info(:timeout, state) do
+  def handle_info(:connect, state) do
     if is_pid(state[:conn]) do
       {:noreply, state}
     else
