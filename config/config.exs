@@ -32,7 +32,7 @@ use Mix.Config
 config :coelho, Coelho.Connection,
   heartbet: 30,
   host: "localhost",
-  port: 32787,
+  port: 5672,
   virtual_host: "/",
   username: "guest",
   password: "guest"

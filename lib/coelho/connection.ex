@@ -7,6 +7,7 @@ defmodule Coelho.Connection do
 
   def init(_opts) do
     send self(), :connect
+    Logger.info("Starting connection manager")
 
     {:ok, %{}}
   end
@@ -15,52 +16,18 @@ defmodule Coelho.Connection do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
-  def connect() do
-    config = Application.get_env(:coelho, Coelho.Connection)
-
-    case AMQP.Connection.open(config) do
-      {:ok, conn} ->
-        Logger.debug("Connected to rabbitmq: #{inspect(conn)}")
-        Process.monitor(conn.pid)
-        {:ok, conn}
-
-      {:error, _} ->
-        :timer.sleep(@reconnect_interval_ms)
-        connect()
-    end
-  end
-
-  def handle_call(:get_connection, _from, %{conn: conn} = state), do: {:reply, conn, state}
-
   def handle_call(:get_connection, _from, state) do
     Logger.debug("Getting connection")
 
-    {:ok, conn} = connect()
-
-    {:reply, conn, %{conn: conn}}
-  end
-
-  def handle_call(:open_channel, _from, %{conn: conn} = state) do
-    Logger.debug("Openning channel")
-
-    result = AMQP.Channel.open(conn)
-
-    {:reply, result, state}
-  end
-
-  def handle_call(:open_channel, _from, state) do
-    Logger.debug("Getting connection")
-    send self(), :connect
-    {:reply, :no_connection, state}
-  end
-
-  def handle_info({:DOWN, _, :process, _pid, reason}, _) do
-    Logger.error("Disconnected from broker: #{inspect(reason)}")
-
-    {:noreply, %{}}
+    case Map.fetch(state, :conn) do
+      {:ok, conn } -> {:reply, {:ok, conn}, state}
+      :error -> {:reply, {:error, :no_connection}, %{}}
+    end
   end
 
   def handle_info(:connect, state) do
+    Logger.info("Trying to connect to broker...")
+
     if is_pid(state[:conn]) do
       {:noreply, state}
     else
@@ -69,9 +36,32 @@ defmodule Coelho.Connection do
           state = Map.put(state, :conn, conn)
           {:noreply, state}
         _error ->
-          :erlang.send_after(@reconnect_interval_ms, self(), :timeout)
+          :erlang.send_after(@reconnect_interval_ms, self(), :connect)
           {:noreply, state}
       end
+    end
+  end
+
+  def handle_info({:DOWN, _, :process, _pid, reason}, _) do
+    Logger.error("Disconnected from broker: #{inspect(reason)}")
+
+    send self(), :connect
+
+    {:noreply, %{}}
+  end
+
+  def connect() do
+    config = Application.get_env(:coelho, Coelho.Connection)
+
+    case AMQP.Connection.open(config) do
+      {:ok, conn} ->
+        Process.monitor(conn.pid)
+        Logger.info("Connected to rabbitmq: #{inspect(conn)}")
+        {:ok, conn}
+
+      {:error, reason} ->
+        Logger.error("Cannot connect: #{inspect(reason)}")
+        {:error, reason}
     end
   end
 
@@ -79,7 +69,4 @@ defmodule Coelho.Connection do
     GenServer.call(__MODULE__, :get_connection)
   end
 
-  def open_channel() do
-    GenServer.call(__MODULE__, :open_channel)
-  end
 end
