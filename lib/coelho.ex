@@ -1,5 +1,5 @@
 defmodule Coelho do
-  alias Coelho.Connection
+  alias Coelho.Channel
   alias Coelho.Basic
 
   require Logger
@@ -19,7 +19,7 @@ defmodule Coelho do
   end
 
   def with_channel(fun) do
-    with {:ok, chan} <- Connection.open_channel() do
+    with {:ok, chan} <- Channel.open() do
       try do
         AMQP.Confirm.select(chan)
         result = fun.(chan)
