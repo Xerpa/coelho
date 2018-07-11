@@ -26,4 +26,8 @@ defmodule Coelho.Basic do
   def reject(channel, delivery_tag, options \\ []) do
     AMQP.Basic.reject(channel, delivery_tag, options)
   end
+
+  def cancel(channel, consumer_tag, options \\ []) do
+    AMQP.Basic.cancel(channel, consumer_tag, options)
+  end
 end
