@@ -8,7 +8,11 @@ defmodule Coelho.Basic do
   end
 
   def consume(chan, queue, consumer_pid \\ nil, options \\ []) do
-    AMQP.Basic.consume(chan, queue, consumer_pid, options)
+      try do
+        AMQP.Basic.consume(chan, queue, consumer_pid, options)
+      catch
+        _k, e -> {:error, e }
+      end
   end
 
   def get(chan, queue, options \\ []) do
