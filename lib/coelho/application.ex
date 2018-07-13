@@ -8,12 +8,12 @@ defmodule Coelho.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      %{id: Coelho.Connection, start: {Coelho.Connection, :start_link, []}}
+      %{id: Coelho.Supervisor, start: {Coelho.Supervisor, :start_link, []}}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Coelho.Supervisor]
+    opts = [strategy: :one_for_one, name: Coelho.TopSupervisor]
     Supervisor.start_link(children, opts)
   end
 end

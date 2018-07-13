@@ -39,4 +39,12 @@ defmodule Coelho do
       end
     end
   end
+
+  def open_managed_channel(pid \\ Coelho.Supervisor, on_start_fn) when is_function(on_start_fn, 1) do
+    Coelho.Supervisor.open_managed_channel(pid, on_start_fn)
+  end
+
+  def get_managed_channel(pid \\ Coelho.Supervisor) do
+    Coelho.Supervisor.get_managed_channel(pid)
+  end
 end
