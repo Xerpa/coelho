@@ -154,6 +154,7 @@ defmodule Coelho.Supervisor do
       spawn_watcher(chan)
       Process.put(@channel_key, %{channel: chan, on_start_fn: on_start_fn})
       on_start_fn.(chan)
+      Process.link(chan.pid)
 
       {:ok, chan}
     end

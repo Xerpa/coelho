@@ -71,7 +71,7 @@ defmodule Coelho.SupervisorTest do
       refute_receive :on_start_fn_called
     end
 
-    test "links the channel to the caller process and traps exits : channel killed", %{
+    test "links the channel to the caller process : channel killed", %{
       supervisor: supervisor
     } do
       zelf = self()
@@ -92,10 +92,10 @@ defmodule Coelho.SupervisorTest do
       Process.exit(chan.pid, :kill)
 
       refute Process.alive?(chan.pid)
-      assert Process.alive?(caller_pid)
+      refute Process.alive?(caller_pid)
     end
 
-    test "links the channel to the caller process and traps exits : caller killed", %{
+    test "cleans up the cannel after caller is down", %{
       supervisor: supervisor
     } do
       zelf = self()
