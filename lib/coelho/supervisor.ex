@@ -67,7 +67,7 @@ defmodule Coelho.Supervisor do
     end
   end
 
-  def handle_call(:new_channel, from, state) do
+  def handle_call(:new_channel, _from, state) do
     case Map.fetch(state, :conn) do
       {:ok, conn} ->
         res = Channel.open(conn)
@@ -75,7 +75,7 @@ defmodule Coelho.Supervisor do
 
       :error ->
         with {:ok, state} <- connect(state) do
-          res = Chanell.open(state.conn)
+          res = Channel.open(state.conn)
           {:reply, res, state}
         else
           error ->
@@ -84,7 +84,7 @@ defmodule Coelho.Supervisor do
     end
   end
 
-  def handle_info({:DOWN, conn_ref, :process, _pid, reason}, state = %{conn_ref: conn_ref}) do
+  def handle_info({:DOWN, conn_ref, :process, _pid, reason}, %{conn_ref: conn_ref}) do
     Logger.error("Disconnected from broker: #{inspect(reason)}")
 
     Process.send_after(self(), :timeout, 0)
