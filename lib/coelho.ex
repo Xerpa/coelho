@@ -18,8 +18,9 @@ defmodule Coelho do
     end)
   end
 
-  def with_channel(fun) do
-    with {:ok, chan} <- Channel.open() do
+  def with_channel(fun, pid \\ Coelho.Supervisor) do
+    with {:ok, conn} <- Coelho.Supervisor.get_connection(pid),
+         {:ok, chan} <- Channel.open(conn) do
       try do
         AMQP.Confirm.select(chan)
         result = fun.(chan)
