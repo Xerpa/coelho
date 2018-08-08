@@ -23,12 +23,7 @@ defmodule Coelho.SupervisorTest do
 
       Process.exit(conn.pid, :kill)
 
-      # :timer.sleep(1000)
-
       {:ok, new_conn} = Coelho.Supervisor.get_connection(supervisor)
-
-      IO.inspect(conn)
-      IO.inspect(new_conn)
 
       refute Process.alive?(conn.pid)
       assert Process.alive?(new_conn.pid)
@@ -42,10 +37,10 @@ defmodule Coelho.SupervisorTest do
       on_start_fn = fn chan ->
         send(zelf, :on_start_fn_called)
         assert %AMQP.Channel{} = chan
-        :ok
+        :init_fn_result
       end
 
-      assert {:ok, %AMQP.Channel{} = chan} =
+      assert {:ok, %AMQP.Channel{} = chan, :init_fn_result} =
                Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
 
       assert_receive :on_start_fn_called
@@ -57,10 +52,10 @@ defmodule Coelho.SupervisorTest do
       on_start_fn = fn chan ->
         send(zelf, :on_start_fn_called)
         assert %AMQP.Channel{} = chan
-        :ok
+        :init_fn_result
       end
 
-      assert {:ok, chan0} = Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
+      assert {:ok, chan0, :init_fn_result} = Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
       assert {:ok, chan1} = Coelho.Supervisor.get_managed_channel(supervisor)
       assert {:ok, chan2} = Coelho.Supervisor.get_managed_channel(supervisor)
 
@@ -78,7 +73,7 @@ defmodule Coelho.SupervisorTest do
 
       caller_pid =
         spawn(fn ->
-          assert {:ok, chan} = Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :ok end)
+          assert {:ok, chan, :res} = Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :res end)
           send(zelf, {:chan, chan})
 
           receive do
@@ -102,7 +97,7 @@ defmodule Coelho.SupervisorTest do
 
       caller_pid =
         spawn(fn ->
-          assert {:ok, chan} = Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :ok end)
+          assert {:ok, chan, res} = Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :res end)
           send(zelf, {:chan, chan})
 
           receive do
