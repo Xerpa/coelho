@@ -14,4 +14,8 @@ defmodule Coelho.Queue do
   def unbind(channel, queue, exchange, options \\ []) do
     AMQP.Queue.unbind(channel, queue, exchange, options)
   end
+
+  def status(channel, queue) do
+    AMQP.Queue.status(channel, queue)
+  end
 end
