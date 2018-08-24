@@ -18,27 +18,8 @@ defmodule Coelho do
     end)
   end
 
-  def with_channel(fun, pid \\ Coelho.Supervisor) do
-    with {:ok, conn} <- Coelho.Supervisor.get_connection(pid),
-         {:ok, chan} <- Channel.open(conn) do
-      try do
-        AMQP.Confirm.select(chan)
-        result = fun.(chan)
-        AMQP.Confirm.wait_for_confirms_or_die(chan, 10_000)
-        result
-      rescue
-        e ->
-          Logger.error("Error sending message to rabbitmq... #{inspect(e)} ")
-          :error
-      catch
-        _kind, cause ->
-          Logger.error("Error sending message to rabbitmq... #{inspect(cause)} ")
-          :error
-      after
-        Logger.debug("Closing channel")
-        AMQP.Channel.close(chan)
-      end
-    end
+  def with_channel(fun, pid \\ Coelho.Supervisor) when is_function(fun, 1) do
+    Coelho.Supervisor.with_channel(pid, fun)
   end
 
   def open_managed_channel(pid \\ Coelho.Supervisor, on_start_fn)

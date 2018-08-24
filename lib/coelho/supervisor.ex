@@ -49,6 +49,35 @@ defmodule Coelho.Supervisor do
     :ok
   end
 
+  def handle_call({:with_channel, fun}, from, state) do
+    with {:ok, conn} <- Map.fetch(state, :conn),
+         true <- Process.alive?(conn.pid),
+         {:ok, chan} <- Channel.open(conn) do
+      result =
+        try do
+          AMQP.Confirm.select(chan)
+          result = fun.(chan)
+          AMQP.Confirm.wait_for_confirms_or_die(chan, 10_000)
+          result
+        rescue
+          e ->
+            Logger.error("Error sending message to rabbitmq... #{inspect(e)} ")
+            :error
+        catch
+          _kind, cause ->
+            Logger.error("Error sending message to rabbitmq... #{inspect(cause)} ")
+            :error
+        after
+          Logger.debug("Closing channel")
+          AMQP.Channel.close(chan)
+        end
+
+      GenServer.reply(from, result)
+    end
+
+    {:noreply, state}
+  end
+
   def handle_call(:get_connection, _from, state) do
     Logger.debug("Getting connection")
 
@@ -115,6 +144,10 @@ defmodule Coelho.Supervisor do
 
   def get_connection(pid \\ __MODULE__) do
     GenServer.call(pid, :get_connection)
+  end
+
+  def with_channel(pid \\ __MODULE__, fun) when is_function(fun, 1) do
+    GenServer.call(pid, {:with_channel, fun})
   end
 
   def new_channel(pid \\ __MODULE__) do
