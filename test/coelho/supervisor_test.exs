@@ -17,6 +17,24 @@ defmodule Coelho.SupervisorTest do
     {:ok, supervisor: supervisor}
   end
 
+  describe "with_channel" do
+    test "executes function and closes channel", %{supervisor: supervisor} do
+      test_pid = self()
+
+      result =
+        Coelho.Supervisor.with_channel(supervisor, fn chan ->
+          send(test_pid, {:chan, chan})
+          :done
+        end)
+
+      assert :done == result
+      assert_receive {:chan, %AMQP.Channel{pid: chan_pid}}
+      assert is_pid(chan_pid)
+      :timer.sleep(100)
+      refute Process.alive?(chan_pid)
+    end
+  end
+
   describe "connection" do
     test "should reconnect to rabbitmq", %{supervisor: supervisor} do
       {:ok, conn} = Coelho.Supervisor.get_connection(supervisor)
@@ -55,7 +73,9 @@ defmodule Coelho.SupervisorTest do
         :init_fn_result
       end
 
-      assert {:ok, chan0, :init_fn_result} = Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
+      assert {:ok, chan0, :init_fn_result} =
+               Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
+
       assert {:ok, chan1} = Coelho.Supervisor.get_managed_channel(supervisor)
       assert {:ok, chan2} = Coelho.Supervisor.get_managed_channel(supervisor)
 
@@ -73,7 +93,9 @@ defmodule Coelho.SupervisorTest do
 
       caller_pid =
         spawn(fn ->
-          assert {:ok, chan, :res} = Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :res end)
+          assert {:ok, chan, :res} =
+                   Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :res end)
+
           send(zelf, {:chan, chan})
 
           receive do
@@ -97,7 +119,9 @@ defmodule Coelho.SupervisorTest do
 
       caller_pid =
         spawn(fn ->
-          assert {:ok, chan, res} = Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :res end)
+          assert {:ok, chan, res} =
+                   Coelho.Supervisor.open_managed_channel(supervisor, fn _ -> :res end)
+
           send(zelf, {:chan, chan})
 
           receive do
