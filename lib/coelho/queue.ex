@@ -18,4 +18,8 @@ defmodule Coelho.Queue do
   def status(channel, queue) do
     AMQP.Queue.status(channel, queue)
   end
+
+  def purge(channel, queue) do
+    AMQP.Queue.purge(channel, queue)
+  end
 end
