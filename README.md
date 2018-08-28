@@ -1,6 +1,6 @@
 # Coelho
 
-**TODO: Add description**
+[![Build Status](https://travis-ci.org/Xerpa/coelho.svg?branch=master)](https://travis-ci.org/Xerpa/coelho)
 
 ## Installation
 
