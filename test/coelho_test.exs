@@ -23,10 +23,13 @@ defmodule CoelhoTest do
       test_pid = self()
 
       result =
-        Coelho.with_channel(fn chan ->
-          send(test_pid, {:chan, chan})
-          :done
-        end, supervisor)
+        Coelho.with_channel(
+          fn chan ->
+            send(test_pid, {:chan, chan})
+            :done
+          end,
+          supervisor
+        )
 
       assert :done == result
       assert_receive {:chan, %AMQP.Channel{pid: chan_pid}}

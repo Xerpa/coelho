@@ -8,6 +8,7 @@ defmodule Coelho.Supervisor do
 
   @reconnect_interval_ms 5000
   @channel_key {__MODULE__, :channel}
+  @on_init_res_key {__MODULE__, :on_init_res}
 
   def start_link(opts \\ [name: __MODULE__]) do
     if opts[:name] do
@@ -161,9 +162,10 @@ defmodule Coelho.Supervisor do
 
       %{channel: chan, on_start_fn: on_start_fn} ->
         if Process.alive?(chan.pid) do
+          res = Process.get(@on_init_res_key)
           {:ok, chan}
         else
-          open_managed_channel_impl(pid, on_start_fn)
+          open_managed_channel_impl(pid, on_start_fn, false)
         end
     end
   end
@@ -171,25 +173,31 @@ defmodule Coelho.Supervisor do
   def open_managed_channel(pid \\ __MODULE__, on_start_fn) when is_function(on_start_fn, 1) do
     case Process.get(@channel_key) do
       nil ->
-        open_managed_channel_impl(pid, on_start_fn)
+        open_managed_channel_impl(pid, on_start_fn, true)
 
       %{channel: chan = %AMQP.Channel{}} ->
         if Process.alive?(chan.pid) do
-          {:ok, chan}
+          res = Process.get(@on_init_res_key)
+          {:ok, chan, res}
         else
-          open_managed_channel_impl(pid, on_start_fn)
+          open_managed_channel_impl(pid, on_start_fn, true)
         end
     end
   end
 
-  defp open_managed_channel_impl(pid, on_start_fn) do
+  defp open_managed_channel_impl(pid, on_start_fn, return_on_init_res?) do
     with {:ok, chan} <- new_channel(pid) do
       spawn_watcher(chan)
       Process.put(@channel_key, %{channel: chan, on_start_fn: on_start_fn})
       res = on_start_fn.(chan)
       Process.link(chan.pid)
+      Process.put(@on_init_res_key, res)
 
-      {:ok, chan, res}
+      if return_on_init_res? do
+        {:ok, chan, res}
+      else
+        {:ok, chan}
+      end
     end
   end
 
