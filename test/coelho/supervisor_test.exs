@@ -64,6 +64,26 @@ defmodule Coelho.SupervisorTest do
       assert_receive :on_start_fn_called
     end
 
+    test "open_managed_channel twice", %{supervisor: supervisor} do
+      zelf = self()
+
+      on_start_fn = fn chan ->
+        send(zelf, :on_start_fn_called)
+        assert %AMQP.Channel{} = chan
+        :init_fn_result
+      end
+
+      assert {:ok, %AMQP.Channel{} = chan, :init_fn_result} =
+               Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
+
+      assert_receive :on_start_fn_called
+
+      assert {:ok, %AMQP.Channel{} = chan, :init_fn_result} =
+               Coelho.Supervisor.open_managed_channel(supervisor, on_start_fn)
+
+      refute_receive :on_start_fn_called
+    end
+
     test "returns the same channel if already open", %{supervisor: supervisor} do
       zelf = self()
 
