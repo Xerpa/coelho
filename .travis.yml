@@ -2,8 +2,18 @@ sudo: required
 
 language: elixir
 
-elixir: '1.6.0'
-otp_release: '20.0'
+elixir:
+  - '1.6.4'
+  - '1.7.3'
+otp_release:
+  - '20.0'
+  - '21.1'
+
+matrix:
+  # FIXME: Travis doesn't seem to support this combination yet...
+  exclude:
+    - elixir: '1.6.4'
+      otp_release: '21.1'
 
 services:
   - docker
