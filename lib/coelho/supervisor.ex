@@ -155,6 +155,17 @@ defmodule Coelho.Supervisor do
     GenServer.call(pid, :new_channel)
   end
 
+  @doc """
+  Gets the managed channel after it has already been opened. If the
+  channel PID has died since the last call to `get_managed_channel/0`,
+  it will be reopened and the `on_start_fn/1` callback will be invoked
+  again before returning the channel.
+
+  Note that `open_managed_channel/1` **must** be called before this
+  function. Calling `get_managed_channel/0` without
+  `open_managed_channel/1` will return `{:error,
+  :channel_not_opened}`.
+  """
   def get_managed_channel(pid \\ __MODULE__) do
     case Process.get(@channel_key) do
       nil ->
@@ -170,6 +181,25 @@ defmodule Coelho.Supervisor do
     end
   end
 
+  @doc """
+  Opens a channel associated with the calling PID that is managed by
+  Coelho.
+
+  The calling PID (_the owner_) should not store nor managed such
+  channel. In the event the channel PID dies, it will be recreated the
+  next time the owner tries to use `get_managed_channel/0`. The owner
+  **must** be prepared to handle exit signals from the channel PID in
+  the event it dies, or trap such messages using
+  `Process.flag(:trap_exit, true)`.
+
+  A start callback `on_start_fn/1` must be supplied in order to do
+  initial setup such as consuming from a queue or setting up the
+  channel QOS options. That function will receive the channel as an
+  argument. Note that this start callback will possibly be invoked
+  multiple times, once for each channel creation.
+
+  When the owner terminates, the channel is automatically closed.
+  """
   def open_managed_channel(pid \\ __MODULE__, on_start_fn) when is_function(on_start_fn, 1) do
     case Process.get(@channel_key) do
       nil ->
