@@ -20,7 +20,7 @@ defmodule Coelho.MixProject do
 
   defp deps do
     [
-      {:amqp, "~> 1.1.1"}
+      {:amqp, "~> 1.6.0"}
     ]
   end
 end
